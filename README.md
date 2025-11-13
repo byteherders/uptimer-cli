@@ -5,6 +5,8 @@
 
 `uptimer-cli` is a terminal-based latency monitor that continually probes TCP or UDP ports and renders a compact, real-time graph of response times. It is especially handy when you need to watch several services at once and want both numeric stats and a sense of trend at a glance.
 
+![uptimer screenshot](uptimer-screenshot.png)
+
 ## Features
 
 - **Multi-target monitoring**: track several hosts/ports concurrently. Each target gets its own line with live stats and graph.
