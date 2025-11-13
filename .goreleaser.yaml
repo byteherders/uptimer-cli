@@ -1,0 +1,59 @@
+project_name: uptimer
+
+before:
+  hooks:
+    - go test ./...
+
+builds:
+  - id: uptimer
+    main: ./cmd
+    binary: uptimer
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+
+archives:
+  - id: uptimer-archives
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+    wrap_in_directory: true
+
+checksum:
+  name_template: "{{ .ProjectName }}_checksums.txt"
+
+signs:
+  - artifacts: checksum
+    cmd: gpg
+    args:
+      - --batch
+      - --pinentry-mode
+      - loopback
+      - --passphrase-file
+      - "{{ .Env.GPG_PASSPHRASE_FILE }}"
+      - --detach-sign
+      - --armor
+      - --output
+      - "{{ .ArtifactPath }}.asc"
+      - "{{ .ArtifactPath }}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

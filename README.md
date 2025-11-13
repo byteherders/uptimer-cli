@@ -88,7 +88,8 @@ uptimer --targets-file ./targets.txt
 - `make fmt` – run gofmt on all Go files.
 - `make vet` – run `go vet ./...`.
 - `make test` – run the unit test suite (`go test ./...` with temp cache).
-- `make build` – produce a linux/amd64 binary at `bin/uptimer`.
+- `make build` – build a host-platform binary at `bin/uptimer`.
+- `make build-linux-amd64` – cross-compile a linux/amd64 binary (`bin/uptimer-linux-amd64`).
 - `make run` – run the CLI directly via `go run`.
 - `make lint` – fmt + vet + test.
 - `make docker` – build the Docker image defined in the Dockerfile.

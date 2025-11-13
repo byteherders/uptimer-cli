@@ -20,8 +20,14 @@ test:
 	@GOCACHE=$$(mktemp -d) go test ./...
 
 build:
-	@echo "Building binary..."
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/$(BIN_NAME) $(CMD_DIR)
+	@echo "Building binary for host platform..."
+	@mkdir -p bin
+	@go build -o bin/$(BIN_NAME) $(CMD_DIR)
+
+build-linux-amd64:
+	@echo "Building linux/amd64 binary..."
+	@mkdir -p bin
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/$(BIN_NAME)-linux-amd64 $(CMD_DIR)
 
 run:
 	@echo "Running uptimer..."
