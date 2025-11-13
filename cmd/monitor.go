@@ -7,11 +7,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 type statusUpdate struct {
 	index int
-	line  string
+	lines []string
 }
 
 var dialTimeout = func(network, address string, timeout time.Duration) (net.Conn, error) {
@@ -20,14 +21,22 @@ var dialTimeout = func(network, address string, timeout time.Duration) (net.Conn
 
 func runMonitors(ctx context.Context, cfg appConfig) {
 	renderer := newRenderer(len(cfg.targets))
+	initialWidth := detectTerminalWidth()
 	for i := range cfg.targets {
-		renderer.lines[i] = formatStatusLine(
+		graphFn := func(width int) string {
+			if width <= 0 {
+				width = graphWidth
+			}
+			return strings.Repeat(" ", width)
+		}
+		renderer.blocks[i] = composeStatusLines(
 			cfg.targets[i].label,
 			"n/a",
 			"n/a",
 			"n/a",
 			"n/a",
-			strings.Repeat(" ", graphWidth),
+			graphFn,
+			initialWidth,
 		)
 	}
 	renderer.Init()
@@ -70,7 +79,12 @@ func monitorTarget(ctx context.Context, idx int, cfg targetConfig, bufferSize in
 		avgText := "n/a"
 		minText := "n/a"
 		maxText := "n/a"
-		graph := strings.Repeat("!", graphWidth)
+		graphFn := func(width int) string {
+			if width <= 0 {
+				width = graphWidth
+			}
+			return strings.Repeat("!", width)
+		}
 
 		if err == nil {
 			history.Add(latency)
@@ -79,7 +93,13 @@ func monitorTarget(ctx context.Context, idx int, cfg targetConfig, bufferSize in
 			avgText = formatDuration(stats.avg)
 			minText = formatDuration(stats.min)
 			maxText = formatDuration(stats.max)
-			graph = renderGraph(history.Values(), graphWidth)
+			values := history.Values()
+			graphFn = func(width int) string {
+				if width <= 0 {
+					width = graphWidth
+				}
+				return renderGraph(values, width)
+			}
 		} else {
 			stats := history.Stats()
 			if stats.count > 0 {
@@ -89,12 +109,12 @@ func monitorTarget(ctx context.Context, idx int, cfg targetConfig, bufferSize in
 			}
 		}
 
-		line := formatStatusLine(cfg.label, lastText, avgText, minText, maxText, graph)
+		lines := composeStatusLines(cfg.label, lastText, avgText, minText, maxText, graphFn, detectTerminalWidth())
 
 		select {
 		case <-ctx.Done():
 			return
-		case updates <- statusUpdate{index: idx, line: line}:
+		case updates <- statusUpdate{index: idx, lines: lines}:
 		}
 
 		select {
@@ -105,8 +125,23 @@ func monitorTarget(ctx context.Context, idx int, cfg targetConfig, bufferSize in
 	}
 }
 
-func formatStatusLine(label, last, avg, min, max, graph string) string {
-	return fmt.Sprintf("%s | last %-10s avg %-10s min %-10s max %-10s |%s", label, last, avg, min, max, graph)
+type graphBuilder func(width int) string
+
+func composeStatusLines(label, last, avg, min, max string, graph graphBuilder, termWidth int) []string {
+	statsLine := fmt.Sprintf("%s | last %-10s avg %-10s min %-10s max %-10s |", label, last, avg, min, max)
+	if graph == nil {
+		return []string{statsLine}
+	}
+
+	if termWidth > 0 && utf8.RuneCountInString(statsLine)+graphWidth > termWidth {
+		width := termWidth
+		if width <= 0 {
+			width = graphWidth
+		}
+		return []string{statsLine, graph(width)}
+	}
+
+	return []string{statsLine + graph(graphWidth)}
 }
 
 func verifyConnectivity(proto, target string, timeout time.Duration) error {

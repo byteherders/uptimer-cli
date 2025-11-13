@@ -6,26 +6,22 @@ import (
 )
 
 type renderer struct {
-	lines []string
+	blocks        [][]string
+	lastLineCount int
 }
 
 func newRenderer(count int) *renderer {
 	return &renderer{
-		lines: make([]string, count),
+		blocks: make([][]string, count),
 	}
 }
 
 func (r *renderer) Init() {
-	if len(r.lines) == 0 {
-		return
-	}
-	for _, line := range r.lines {
-		fmt.Println(line)
-	}
+	r.lastLineCount = r.printBlocks()
 }
 
 func (r *renderer) Run(ctx context.Context, updates <-chan statusUpdate) {
-	if len(r.lines) == 0 {
+	if len(r.blocks) == 0 {
 		<-ctx.Done()
 		return
 	}
@@ -37,8 +33,8 @@ func (r *renderer) Run(ctx context.Context, updates <-chan statusUpdate) {
 			if !ok {
 				return
 			}
-			if update.index >= 0 && update.index < len(r.lines) {
-				r.lines[update.index] = update.line
+			if update.index >= 0 && update.index < len(r.blocks) {
+				r.blocks[update.index] = update.lines
 				r.renderAll()
 			}
 		}
@@ -46,12 +42,25 @@ func (r *renderer) Run(ctx context.Context, updates <-chan statusUpdate) {
 }
 
 func (r *renderer) renderAll() {
-	if len(r.lines) == 0 {
-		return
+	if r.lastLineCount > 0 {
+		fmt.Printf("\033[%dA", r.lastLineCount)
 	}
-	fmt.Printf("\033[%dA", len(r.lines))
-	for _, line := range r.lines {
-		fmt.Printf("\r%s", line)
-		fmt.Print("\033[K\n")
+	r.lastLineCount = r.printBlocks()
+}
+
+func (r *renderer) printBlocks() int {
+	total := 0
+	for _, block := range r.blocks {
+		if len(block) == 0 {
+			fmt.Print("\r\n")
+			total++
+			continue
+		}
+		for _, line := range block {
+			fmt.Printf("\r%s", line)
+			fmt.Print("\033[K\n")
+			total++
+		}
 	}
+	return total
 }
