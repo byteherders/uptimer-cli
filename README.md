@@ -1,7 +1,7 @@
 # uptimer-cli
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/therder/uptimer-cli/ci.yml?branch=main&logo=github)](https://github.com/therder/uptimer-cli/actions)
-[![Latest Release](https://img.shields.io/github/v/release/therder/uptimer-cli?logo=github)](https://github.com/therder/uptimer-cli/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/byteherders/uptimer-cli/ci.yml?branch=main&logo=github)](https://github.com/byteherders/uptimer-cli/actions)
+[![Latest Release](https://img.shields.io/github/v/release/byteherders/uptimer-cli?logo=github)](https://github.com/byteherders/uptimer-cli/releases)
 
 `uptimer-cli` is a terminal-based latency monitor that continually probes TCP or UDP ports and renders a compact, real-time graph of response times. It is especially handy when you need to watch several services at once and want both numeric stats and a sense of trend at a glance.
 
